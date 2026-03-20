@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>創作者策略：粉絲成長與業配收益比較工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-a: #3498DB; /* 策略 A 藍色 */
+            --primary-b: #E74C3C; /* 策略 B 紅色 */
+            --bg-color: #F8F9FA;
+            --card-bg: #FFFFFF;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr;
+            gap: 20px;
+        }
+        @media (max-width: 1024px) {
+            .container { grid-template-columns: 1fr 1fr; }
+            .results-panel { grid-column: span 2; }
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .results-panel { grid-column: span 1; }
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3 { color: #2C3E50; margin-top: 0; }
+        .strategy-title-a { color: var(--primary-a); border-bottom: 2px solid var(--primary-a); padding-bottom: 5px; }
+        .strategy-title-b { color: var(--primary-b); border-bottom: 2px solid var(--primary-b); padding-bottom: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #2C3E50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #1A252F; }
+        .summary-box {
+            background-color: #E8F6F3;
+            padding: 15px;
+            border-left: 5px solid #1ABC9C;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+        th, td {
+            padding: 8px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #f9f9f9;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+        .table-container {
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h2 class="strategy-title-a">🔵 策略 A：高成長 / 均價模式</h2>
+            <p style="font-size: 0.85em; color: #7f8c8d;">著重於快速累積粉絲數，以較高的接案頻率創造收入。</p>
+            <div class="form-group">
+                <label>目前粉絲總數 (人)</label>
+                <input type="number" id="fansA" value="10000">
+            </div>
+            <div class="form-group">
+                <label>粉絲預估年成長率 (%)</label>
+                <input type="number" id="growthA" value="30" step="1">
+            </div>
+            <div class="form-group">
+                <label>每 1 萬粉的業配報價 (元)</label>
+                <input type="number" id="priceA" value="1000" step="100">
+            </div>
+            <div class="form-group">
+                <label>每月平均接案量 (篇/月)</label>
+                <input type="number" id="postsA" value="6">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="strategy-title-b">🔴 策略 B：深耕鐵粉 / 高單價模式</h2>
+            <p style="font-size: 0.85em; color: #7f8c8d;">著重於內容深度與轉換率，粉絲成長較慢，但業配單價高。</p>
+            <div class="form-group">
+                <label>目前粉絲總數 (人)</label>
+                <input type="number" id="fansB" value="10000">
+            </div>
+            <div class="form-group">
+                <label>粉絲預估年成長率 (%)</label>
+                <input type="number" id="growthB" value="10" step="1">
+            </div>
+            <div class="form-group">
+                <label>每 1 萬粉的業配報價 (元)</label>
+                <input type="number" id="priceB" value="3000" step="100">
+            </div>
+            <div class="form-group">
+                <label>每月平均接案量 (篇/月)</label>
+                <input type="number" id="postsB" value="2">
+            </div>
+            
+            <button onclick="calculate()">🚀 執行 10 年期收益對決</button>
+        </div>
+
+        <div class="card results-panel">
+            <h2>📈 累積收益推演報告</h2>
+            <div id="summary" class="summary-box">
+                請點擊按鈕執行推演，查看哪一種策略在長期能創造最高收益。
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+
+            <h3>📅 歷年數據明細</h3>
+            <div class="table-container">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>年度</th>
+                            <th>A 粉絲數</th>
+                            <th>A 累積收益</th>
+                            <th>B 粉絲數</th>
+                            <th>B 累積收益</th>
+                            <th>當前領先</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart = null;
+
+        function calculate() {
+            // 取得策略 A 參數
+            let fA = parseFloat(document.getElementById('fansA').value);
+            const gA = parseFloat(document.getElementById('growthA').value) / 100;
+            const pA = parseFloat(document.getElementById('priceA').value);
+            const postA = parseFloat(document.getElementById('postsA').value);
+
+            // 取得策略 B 參數
+            let fB = parseFloat(document.getElementById('fansB').value);
+            const gB = parseFloat(document.getElementById('growthB').value) / 100;
+            const pB = parseFloat(document.getElementById('priceB').value);
+            const postB = parseFloat(document.getElementById('postsB').value);
+
+            let cumRevA = 0;
+            let cumRevB = 0;
+
+            const years = [];
+            const dataRevA = [];
+            const dataRevB = [];
+            let crossYear = -1;
+            let initialLeader = '';
+
+            const tbody = document.querySelector('#resultTable tbody');
+            tbody.innerHTML = '';
+
+            // 推演 10 年
+            for (let year = 1; year <= 10; year++) {
+                years.push(`第 ${year} 年`);
+
+                // 計算當年度收益：(粉絲數 / 10000) * 萬粉單價 * 每月接案 * 12個月
+                let yearlyRevA = (fA / 10000) * pA * postA * 12;
+                let yearlyRevB = (fB / 10000) * pB * postB * 12;
+
+                cumRevA += yearlyRevA;
+                cumRevB += yearlyRevB;
+
+                dataRevA.push(Math.round(cumRevA));
+                dataRevB.push(Math.round(cumRevB));
+
+                // 判斷領先者
+                let currentLeader = cumRevA > cumRevB ? '策略 A' : '策略 B';
+                if (year === 1) initialLeader = currentLeader;
+                if (year > 1 && currentLeader !== initialLeader && crossYear === -1) {
+                    crossYear = year; // 發生黃金交叉的年份
+                }
+
+                // 填寫表格
+                const tr = document.createElement('tr');
+                let status = cumRevA > cumRevB ? `<span style="color:var(--primary-a);font-weight:bold">A 勝</span>` : `<span style="color:var(--primary-b);font-weight:bold">B 勝</span>`;
+                
+                tr.innerHTML = `
+                    <td style="text-align:center">${year}</td>
+                    <td>${Math.round(fA).toLocaleString()}</td>
+                    <td style="color:var(--primary-a)">$${Math.round(cumRevA).toLocaleString()}</td>
+                    <td>${Math.round(fB).toLocaleString()}</td>
+                    <td style="color:var(--primary-b)">$${Math.round(cumRevB).toLocaleString()}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // 明年粉絲成長
+                fA *= (1 + gA);
+                fB *= (1 + gB);
+            }
+
+            // 更新摘要報告
+            const summaryDiv = document.getElementById('summary');
+            let finalWinner = cumRevA > cumRevB ? '策略 A (高成長)' : '策略 B (高單價)';
+            let insightText = `💡 <strong>10年推演結論：</strong> 在第 10 年時，<strong>${finalWinner}</strong> 的累積總收益較高。<br>`;
+            
+            if (crossYear !== -1) {
+                insightText += `值得注意的是，在 <strong>第 ${crossYear} 年</strong> 發生了收益交叉！這代表短期與長期的最佳策略可能是不同的。`;
+            } else {
+                insightText += `在目前的設定下，${finalWinner} 從頭到尾都保持領先優勢。`;
+            }
+            summaryDiv.innerHTML = insightText;
+
+            // 繪製圖表
+            drawChart(years, dataRevA, dataRevB);
+        }
+
+        function drawChart(labels, dataA, dataB) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '策略 A 累積收益',
+                            data: dataA,
+                            borderColor: '#3498DB',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '策略 B 累積收益',
+                            data: dataB,
+                            borderColor: '#E74C3C',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + new Intl.NumberFormat('zh-TW').format(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: { callback: function(value) { return value / 10000 + ' 萬'; } }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.onload = calculate;
+    </script>
+</body>
+</html>
